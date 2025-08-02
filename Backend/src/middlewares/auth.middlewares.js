@@ -1,13 +1,11 @@
 const jwt = require("jsonwebtoken")
 const userModel = require("../models/user.models")
-const blackListToken = require("../models/blacklistToken.models")
+const blacklistToken = require("../models/blacklistToken.models")
+const captainModel = require("../models/captain.models")
  
- const authMiddleware = async (req,res,next) => {
+ const authUserMiddleware = async (req,res,next) => {
      
-     
- 
-
-      const token = req.cookies.token
+   const token = req.cookies.token
       
        console.log(token);
        
@@ -16,9 +14,9 @@ const blackListToken = require("../models/blacklistToken.models")
         return res.status(401).json({message : "unAuthorised user"})
     } 
  
-    isBlacklist = await userModel.find({token : token})
+    isBlacklist = await blacklistToken.find({token : token})
             
-     if(!isBlacklist){
+     if(isBlacklist){
         return res.status(401).json({message : "unauthorised user"})
      }
 
@@ -43,4 +41,34 @@ const blackListToken = require("../models/blacklistToken.models")
  }
 
 
- module.exports = authMiddleware
+  const authCaptainMiddleware = async (req,res,next) => {
+      const token = req.cookies 
+
+      if(!token){
+        return res.status(401).json({message : " unauthorised captain"})
+      }
+
+         isBlacklist = await blacklistToken.find({token : token}) 
+
+       if(isBlacklist){
+        return res.status(401).json({message : "unauthorised user"})
+     } 
+
+      try {
+         const decode = jwt.verify(token,process.env.JWT_SECRET)
+             const captain = captainModel.findById({
+              _id : decode._id
+             })
+
+              req.captain = captain 
+ 
+               return next()
+
+      } catch (error) {
+        res.status(401).json({
+          message : "unauthorised user"
+        })
+      }
+  }
+
+ module.exports = {authUserMiddleware,authCaptainMiddleware}
